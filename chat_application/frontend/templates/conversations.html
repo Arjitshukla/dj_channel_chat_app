@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>My Conversations</h3>
+
+<div id="conversations"></div>
+
+<script>
+const token = localStorage.getItem("access");
+
+async function loadConversations() {
+    const response = await fetch("/chat/api/conversations/", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    });
+
+    const data = await response.json();
+
+    let html = "";
+
+    data.forEach(conv => {
+        html += `
+            <div style="margin-bottom:10px;">
+                <button class="btn" onclick="openChat(${conv.id})">
+                    Open Conversation ${conv.id}
+                </button>
+            </div>
+        `;
+    });
+
+    document.getElementById("conversations").innerHTML = html;
+}
+
+function openChat(id) {
+    window.location.href = `/chat/${id}/`;
+}
+
+loadConversations();
+</script>
+
+{% endblock %}

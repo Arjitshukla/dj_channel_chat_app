@@ -23,7 +23,8 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('chat.urls')),
+    path('chat/', include('chat.urls')),
+    path('', include('frontend.urls')),
 
     # JWT authentication endpoints
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
