@@ -157,11 +157,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         unread = MessageReadStatus.objects.filter(
             user=self.user,
-            is_read=False
+            is_read=False,
+            message__conversation_id=self.conversation_id
         )
 
-        for item in unread:
-
-            item.is_read = True
-            item.read_at = timezone.now()
-            item.save()
+        unread.update(
+        is_read=True,
+        read_at=timezone.now()
+)
