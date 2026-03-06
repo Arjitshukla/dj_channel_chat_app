@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            background: #f4f6f9;
+        }
+        .navbar {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+        }
+        .container {
+            padding: 20px;
+        }
+        .btn {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2>Chat Application</h2>
+</div>
+
+<div class="container">
+    {% block content %}
+    {% endblock %}
+</div>
+
+</body>
+</html>

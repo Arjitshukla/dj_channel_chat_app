@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Chat Room</h3>
+
+<div id="chat-box" style="height:300px; overflow-y:scroll; background:rgb(183, 106, 106); padding:10px;"></div>
+
+<br>
+
+<input type="text" id="message-input" placeholder="Type message">
+<button class="btn" onclick="sendMessage()">Send</button>
+
+<script>
+const token = localStorage.getItem("access");
+const conversationId = "{{ conversation_id }}";
+
+const socket = new WebSocket(
+    `ws://localhost:8000/ws/chat/${conversationId}/?token=${token}`
+);
+
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    addMessage(data.message);
+};
+
+function addMessage(message) {
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML += `<p>${message}</p>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function sendMessage() {
+    const input = document.getElementById("message-input");
+    socket.send(JSON.stringify({
+        message: input.value
+    }));
+    input.value = "";
+}
+
+async function loadOldMessages() {
+    const response = await fetch(`/api/conversations/${conversationId}/messages/`, {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    });
+
+    const data = await response.json();
+
+    data.forEach(msg => {
+        addMessage(msg.content);
+    });
+}
+
+loadOldMessages();
+</script>
+
+{% endblock %}
