@@ -4,55 +4,135 @@
 
 <h3>Chat Room</h3>
 
-<div id="chat-box" style="height:300px; overflow-y:scroll; background:rgb(183, 106, 106); padding:10px;"></div>
+<div id="chat-box" style="height:300px; overflow-y:scroll; background:rgb(183,106,106); padding:10px;"></div>
 
 <br>
 
 <input type="text" id="message-input" placeholder="Type message">
-<button class="btn" onclick="sendMessage()">Send</button>
+<button onclick="sendMessage()">Send</button>
 
 <script>
+
 const token = localStorage.getItem("access");
 const conversationId = "{{ conversation_id }}";
+const currentUser = "{{ request.user.username }}";
 
 const socket = new WebSocket(
     `ws://localhost:8000/ws/chat/${conversationId}/?token=${token}`
 );
 
-socket.onmessage = function(event) {
+socket.onmessage = function(event){
+
     const data = JSON.parse(event.data);
-    addMessage(data.message);
+
+    // 📨 new message
+    if(data.type === "message"){
+
+        addMessage(
+            data.sender,
+            data.message,
+            data.message_id,
+            "delivered"
+        );
+
+        // receiver read event
+        if(data.sender !== currentUser){
+
+            socket.send(JSON.stringify({
+                type:"read",
+                message_id:data.message_id
+            }));
+
+        }
+
+    }
+
+    // 👁 read status update
+    if(data.type === "read"){
+
+        const status = document.getElementById(`status-${data.message_id}`);
+
+        if(status){
+            status.innerHTML = "✓✓";
+            status.style.color = "blue";
+        }
+
+    }
+
 };
 
-function addMessage(message) {
+
+function addMessage(sender,message,messageId,status="sent"){
+
     const chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML += `<p>${message}</p>`;
+
+    let tick = "";
+
+    // tick sirf sender ko
+    if(sender === currentUser){
+
+        if(status === "sent") tick = "✓";
+        if(status === "delivered") tick = "✓✓";
+        if(status === "read") tick = "✓✓";
+
+    }
+
+    const msg = document.createElement("p");
+
+    msg.innerHTML = `
+        <b>${sender}</b>: ${message}
+        <span id="status-${messageId}" style="margin-left:6px">${tick}</span>
+    `;
+
+    chatBox.appendChild(msg);
+
     chatBox.scrollTop = chatBox.scrollHeight;
+
 }
 
-function sendMessage() {
+
+function sendMessage(){
+
     const input = document.getElementById("message-input");
-    socket.send(JSON.stringify({
-        message: input.value
-    }));
+
+    if(input.value.trim() !== ""){
+
+        socket.send(JSON.stringify({
+            type:"message",
+            message:input.value
+        }));
+
+    }
+
     input.value = "";
+
 }
 
-async function loadOldMessages() {
-    const response = await fetch(`/api/conversations/${conversationId}/messages/`, {
-        headers: {
-            "Authorization": "Bearer " + token
+
+async function loadOldMessages(){
+
+    const response = await fetch(`/chat/api/conversations/${conversationId}/messages/`,{
+        headers:{
+            "Authorization":"Bearer " + token
         }
     });
 
     const data = await response.json();
 
-    data.forEach(msg => {
-        addMessage(msg.content);
+    data.forEach(msg=>{
+
+        addMessage(
+            msg.sender,
+            msg.content,
+            msg.id
+        );
+
     });
+
 }
 
 loadOldMessages();
+
 </script>
 
 {% endblock %}
