@@ -3,6 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 from chat.models import Conversation, Message, MessageReadStatus
+from chat.tasks import send_message_notification
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -53,6 +54,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message_text = data.get("message")
 
             message_id = await self.save_message(message_text)
+            send_message_notification.delay(message_id)
 
             await self.channel_layer.group_send(
                 self.room_group_name,

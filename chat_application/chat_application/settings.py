@@ -50,7 +50,6 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "accounts.User"
 
 # jwt authentication settings
-
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -60,6 +59,10 @@ REST_FRAMEWORK = {
     ),
 }
 
+
+# set redis brocker for celery
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
 
 MIDDLEWARE = [
