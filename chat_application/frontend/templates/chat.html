@@ -12,6 +12,7 @@
 <button class="btn" onclick="sendMessage()">Send</button>
 
 <script>
+
 const token = localStorage.getItem("access");
 const conversationId = "{{ conversation_id }}";
 
@@ -20,26 +21,82 @@ const socket = new WebSocket(
 );
 
 socket.onmessage = function(event) {
+
     const data = JSON.parse(event.data);
-    addMessage(data.message);
+
+    // 📨 New message
+    if (data.type === "message") {
+
+        addMessage(
+            data.sender + ": " + data.message,
+            data.message_id,
+            "delivered"
+        );
+
+        // send read status
+        socket.send(JSON.stringify({
+            type: "read",
+            message_id: data.message_id
+        }));
+
+    }
+
+    // 👁️ Read status
+    if (data.type === "read") {
+
+        const status = document.getElementById(`status-${data.message_id}`);
+
+        if (status){
+            status.innerHTML = "✓✓";
+            status.style.color = "blue";
+        }
+
+    }
+
 };
 
-function addMessage(message) {
+function addMessage(message, messageId, status="sent") {
+
     const chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML += `<p>${message}</p>`;
+
+    let tick = "✓";
+
+    if (status === "delivered") tick = "✓✓";
+    if (status === "read") tick = "✓✓";
+
+    const msg = document.createElement("p");
+
+    msg.innerHTML = `
+        ${message}
+        <span id="status-${messageId}" style="margin-left:8px">${tick}</span>
+    `;
+
+    chatBox.appendChild(msg);
+
     chatBox.scrollTop = chatBox.scrollHeight;
+
 }
 
 function sendMessage() {
+
     const input = document.getElementById("message-input");
-    socket.send(JSON.stringify({
-        message: input.value
-    }));
+
+    if (input.value.trim() !== "") {
+
+        socket.send(JSON.stringify({
+            type: "message",
+            message: input.value
+        }));
+
+    }
+
     input.value = "";
+
 }
 
 async function loadOldMessages() {
-    const response = await fetch(`/api/conversations/${conversationId}/messages/`, {
+
+    const response = await fetch(`/chat/api/conversations/${conversationId}/messages/`, {
         headers: {
             "Authorization": "Bearer " + token
         }
@@ -48,11 +105,19 @@ async function loadOldMessages() {
     const data = await response.json();
 
     data.forEach(msg => {
-        addMessage(msg.content);
+
+        addMessage(
+            msg.sender + ": " + msg.content,
+            msg.id,
+            "read"
+        );
+
     });
+
 }
 
 loadOldMessages();
+
 </script>
 
 {% endblock %}
